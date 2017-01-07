@@ -10,6 +10,7 @@ from ts import ka
 from ts import ptp
 from ts import rarbg
 from ts import torrentproject
+from ts import cardigann
 from cherrypy.lib.auth2 import require
 
 
@@ -34,7 +35,11 @@ class Torrentsearch(object):
                 {'type': 'password', 'label': 'PTP passkey', 'name': 'torrents_ptp_passkey'},
                 {'type': 'bool', 'label': 'Rarbg', 'name': 'torrents_rarbg_enabled'},
                 {'type': 'bool', 'label': 'KAT', 'name': 'torrents_ka_enabled'},
-                {'type': 'bool', 'label': 'Torrent project', 'name': 'torrents_torrentproject_enabled', 'desc': 'DTH tracker'}
+                {'type': 'bool', 'label': 'Torrent project', 'name': 'torrents_torrentproject_enabled', 'desc': 'DTH tracker'},
+                {'type': 'bool', 'label': 'Enable Cardigann', 'name': 'torrents_cardigann_enabled'},
+                {'type': 'text', 'label': 'Cardigann host', 'name': 'torrents_cardigann_host'},
+                {'type': 'text', 'label': 'Cardigann port', 'name': 'torrents_cardigann_port'},
+                {'type': 'password', 'label': 'Cardigann passkey', 'name': 'torrents_cardigann_apikey'}
             ]
         })
 
@@ -65,6 +70,9 @@ class Torrentsearch(object):
             if htpc.settings.get('torrents_torrentproject_enabled'):
                 r += self.search_torrentproject(query, None)
 
+            if htpc.settings.get('torrents_cardigann_enabled'):
+                r += self.search_cardigan(query)
+
         elif provider == 'btn':
             if htpc.settings.get('torrents_btn_enabled'):
                 r += self.btn(query)
@@ -80,6 +88,10 @@ class Torrentsearch(object):
         elif provider == 'norbits':
             if htpc.settings.get('torrents_norbits_enabled'):
                 r += self.search_norbits(query, 'all')
+        elif provider == 'cardigann':
+            if htpc.settings.get('torrents_cardigann_enabled'):
+                r += self.search_cardigann(query)
+
 
         self.logger.debug('Found %s torrents in total' % len(r))
         return r
@@ -132,6 +144,10 @@ class Torrentsearch(object):
 
         if htpc.settings.get('torrents_torrentproject_enabled') == 1:
             torrentproviders.append('torrentproject')
+
+        if (htpc.settings.get('torrents_cardigann_enabled') == 1 and htpc.settings.get('torrents_cardigann_apikey')
+            and htpc.settings.get('torrents_cardigann_host')):
+            torrentproviders.append('cardigann')
 
         return torrentproviders
 
@@ -213,3 +229,6 @@ class Torrentsearch(object):
 
     def search_torrentproject(self, q, cat):
         return torrentproject.Torrentproject().search(q, cat)
+
+    def search_cardigann(self, query, cat='all'):
+        return cardigann.search(query, cat)
